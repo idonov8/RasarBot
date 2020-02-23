@@ -60,9 +60,15 @@ def welcome(bot, update):
     
 
 def cancel_report(bot, update):
-    #TODO: implement
     chat_id = update.message.chat_id
     bot.send_message(chat_id=chat_id, text='דיווח בוטל')
+
+    custom_keyboard = [['/report גדול נקי', '/report קטן נקי'], 
+                       ['/report גדול רס"ר', '/report קטן רס"ר']]
+    reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard)
+    bot.send_message(chat_id=chat_id, 
+                 text="בחרו מהאפשרויות לדיווח", 
+                 reply_markup=reply_markup)
     
 def report(bot, update):
     global SHAGS_REPS
@@ -72,9 +78,9 @@ def report(bot, update):
     SHAGS_REPS[shag + ' ' + kind] += 1
     reports_num = SHAGS_REPS[shag + ' ' + kind]
     logger.info(shag + kind +' reports: ' + str(reports_num))
-    custom_keyboard = ['/cancel_report']
+    custom_keyboard = [['/cancel_report']]
     reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard)
-    bot.send_message(chat_id=chat_id, text='תודה שדיווחת!')
+    bot.send_message(chat_id=chat_id, text='תודה שדיווחת!', reply_markup=reply_markup)
     bot.send_message(chat_id=chat_id, text= 'שג ' + shag + " " +kind + 
                                                     ' מס דיווחים: ' + str(reports_num))
 
