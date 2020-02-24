@@ -18,6 +18,11 @@ SHAGS_REPS = {
     'קטן רס"ר': 0
     }
 
+# When developing, I can use the dev_token and test on RasarDevBot
+dev_token = '1094786502:AAFkEu9_sjyj2zSz9RlUc980D4wHLQ2ij9g'
+BOT_TOKEN = '1085565057:AAH08Gb5L8yB9rIVdLsbrQKx3yTNM_2PJGA' 
+ADMIN_ID = 698233004
+
 # Get random dog image for the memes
 def get_url():
     contents = requests.get('https://random.dog/woof.json').json()
@@ -84,11 +89,18 @@ def report(bot, update):
     bot.send_message(chat_id=chat_id, text= 'שג ' + shag + " " +kind + 
                                                     ' מס דיווחים: ' + str(reports_num))
 
+def send_admin(bot, update):
+    chat_id = update.message.chat_id
+    bot.send_message(chat_id=chat_id, text='תודה רבה :)')
+    bot.send_message(chat_id=ADMIN_ID, text=update.message.text)
+
 def main():
-    updater = Updater('1085565057:AAH08Gb5L8yB9rIVdLsbrQKx3yTNM_2PJGA' )
+    updater = Updater(BOT_TOKEN)
     dp = updater.dispatcher
     dp.add_handler(CommandHandler('cancel_report',cancel_report))
     dp.add_handler(CommandHandler('bop',bop))
+    dp.add_handler(CommandHandler('report_bug', send_admin))
+    dp.add_handler(CommandHandler('suggest_feature', send_admin))
     dp.add_handler(CommandHandler('report',report))
     dp.add_handler(MessageHandler(Filters.text, welcome))
     updater.start_polling()
