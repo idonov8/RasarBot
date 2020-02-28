@@ -19,6 +19,7 @@ SHAGS_REPS = {
     }
 
 # When developing, I can use the dev_token and test on RasarDevBot
+# DON'T FORGET to change back to bot_token before git commiting.
 dev_token = '1094786502:AAFkEu9_sjyj2zSz9RlUc980D4wHLQ2ij9g'
 BOT_TOKEN = '1085565057:AAH08Gb5L8yB9rIVdLsbrQKx3yTNM_2PJGA' 
 ADMIN_ID = 698233004
@@ -62,9 +63,9 @@ def welcome(bot, update):
                  text="בחרו מהאפשרויות לדיווח", 
                  reply_markup=reply_markup)
 
-    
-
 def cancel_report(bot, update):
+    # Doesn't really canceling the report yet.
+    # for not it's ment to prevent spamming
     chat_id = update.message.chat_id
     bot.send_message(chat_id=chat_id, text='דיווח בוטל')
 
@@ -91,8 +92,12 @@ def report(bot, update):
 
 def send_admin(bot, update):
     chat_id = update.message.chat_id
-    bot.send_message(chat_id=chat_id, text='תודה רבה :)')
-    bot.send_message(chat_id=ADMIN_ID, text=update.message.text)
+    message = update.message.text
+    if len(message.split()) == 1:
+        bot.send_message(chat_id=chat_id, text='יש לכתוב את הפקודה ' + message + ' ולאחר מכן טקסט חופשי.  \n \n טיפ: נגיעה ארוכה על הפקדה תכתוב אותה מבלי לשלוח.') 
+    else:
+        bot.send_message(chat_id=chat_id, text='תודה רבה :)')
+        bot.send_message(chat_id=ADMIN_ID, text=message)
 
 def main():
     updater = Updater(BOT_TOKEN)
