@@ -3,7 +3,7 @@ from telegram.ext import  Updater, InlineQueryHandler, CommandHandler, Defaults,
 import requests # to make requests to external api
 import re # regex for pictures of doggos
 import logging
-import datetime # use to restart everyday 
+from datetime import datetime # use to restart everyday 
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
@@ -11,17 +11,7 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-
-SHAGS_REPS = {
-    'גדול': {
-        'נקי': 0, 
-        'רס"ר': 0, 
-    },
-    'קטן':{
-        'נקי': 0, 
-        'רס"ר': 0
-    }
-}
+reports = []
 
 # When developing, I can use the dev_token and test on RasarDevBot
 # DON'T FORGET to change back to bot_token before git commiting.
@@ -52,15 +42,39 @@ def bop(bot, update):
     url = get_image_url()
     bot.send_photo(chat_id=chat_id, photo=url)  
 
-def isClean(): #TODO: modify when updating db
-    global SHAGS_REPS
-    #TODO: stub
-        
+#temporaty function
+def convert_to_old_datastruct(reports):
+    shags_count = {
+        'גדול': {
+            'נקי': 0, 
+            'רס"ר': 0, 
+        },
+        'קטן':{
+            'נקי': 0, 
+            'רס"ר': 0
+        }
+    }
 
+    for report in reports:
+        shag = report['shag']
+        state = report['state']
+        shags_count[shag][state] += 1
+    
+    return shags_count
+
+def currentState(): #TODO: modify when updating db
+    global reports
+    # {
+    #     'shag': ״גדול״,
+    #     'state': ״נקי״,
+    #     'chat_id': 3423454,
+    #     'time': datetime.now()
+    # }
 
 def update(bot, update):
+    global reports
     chat_id = update.message.chat_id
-
+    SHAGS_REPS = convert_to_old_datastruct(reports)
     for shag, data in SHAGS_REPS.items():
         for cond in data.keys():
             reports_num = SHAGS_REPS[shag][cond]
@@ -82,18 +96,22 @@ def cancel_report(bot, update):
                  reply_markup=reply_markup)
     
 def report(bot, update):
-    global SHAGS_REPS
+    global reports
     chat_id = update.message.chat_id
     shag = update.message.text.split()[1]
-    kind = update.message.text.split()[2]
-    SHAGS_REPS[shag][kind] += 1
-    reports_num = SHAGS_REPS[shag][kind]
-    logger.info(shag + kind +' reports: ' + str(reports_num))
+    state = update.message.text.split()[2]
+
+    reports.append({
+        'shag': shag,
+        'state': state,
+        'chat_id': chat_id,
+        'time': datetime.now()
+    })
+
     custom_keyboard = [['/cancel_report']]
-    reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard)
+    reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard) 
     bot.send_message(chat_id=chat_id, text='תודה שדיווחת!', reply_markup=reply_markup)
-    bot.send_message(chat_id=chat_id, text= 'שג ' + shag + " " +kind + 
-                                                    ' מס דיווחים: ' + str(reports_num))
+    
 
 def send_admin(bot, update):
     chat_id = update.message.chat_id
