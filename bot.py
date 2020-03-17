@@ -48,17 +48,24 @@ def convert_to_old_datastruct(reports):
         'גדול': {
             'נקי': 0, 
             'רס"ר': 0, 
+            'prob':0
         },
         'קטן':{
             'נקי': 0, 
-            'רס"ר': 0
+            'רס"ר': 0,
+            'prob':0
         }
     }
 
     for report in reports:
         shag = report['shag']
         state = report['state']
+        if state=='רס"ר':
+            shags_count[shag]['prob'] +=0.5*(1-shags_count[shag]['prob'])
+        else:
+            shags_count[shag]['prob'] *=0.75
         shags_count[shag][state] += 1
+
     
     return shags_count
 
