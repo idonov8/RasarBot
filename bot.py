@@ -13,6 +13,15 @@ logger.setLevel(logging.INFO)
 
 reports = []
 
+shags_situation = {
+        'גדול': {
+            'isRasar':0 # is rasar is a number between 0 and 1, 1- rasar, 0 clean
+        },
+        'קטן':{
+            'isRasar':0
+        }
+    }
+
 # When developing, I can use the dev_token and test on RasarDevBot
 # DON'T FORGET to change back to bot_token before git commiting.
 dev_token = '1094786502:AAFkEu9_sjyj2zSz9RlUc980D4wHLQ2ij9g'
@@ -21,6 +30,10 @@ ADMIN_ID = 698233004
 KEYBOARD = [['/report גדול נקי', '/report קטן נקי'], 
             ['/report גדול רס"ר', '/report קטן רס"ר'],
             ['מה המצב?']]
+
+# the rate of change towards rasar/clean
+CLEAN_FACTOR =  0.75 
+RASAR_FACTOR = 0.5
 
 # Get random dog image for the memes
 def get_url():
@@ -42,26 +55,6 @@ def bop(bot, update):
     url = get_image_url()
     bot.send_photo(chat_id=chat_id, photo=url)  
 
-#temporaty function
-def convert_to_old_datastruct(reports):
-    shags_count = {
-        'גדול': {
-            'נקי': 0, 
-            'רס"ר': 0, 
-        },
-        'קטן':{
-            'נקי': 0, 
-            'רס"ר': 0
-        }
-    }
-
-    for report in reports:
-        shag = report['shag']
-        state = report['state']
-        shags_count[shag][state] += 1
-    
-    return shags_count
-
 def currentState(): #TODO: modify when updating db
     global reports
     # {
@@ -74,12 +67,15 @@ def currentState(): #TODO: modify when updating db
 def update(bot, update):
     global reports
     chat_id = update.message.chat_id
-    SHAGS_REPS = convert_to_old_datastruct(reports)
-    for shag, data in SHAGS_REPS.items():
-        for cond in data.keys():
-            reports_num = SHAGS_REPS[shag][cond]
-            bot.send_message(chat_id=chat_id, text= 'שג ' + shag + " " +cond + 
-                            ' מס דיווחים: ' + str(reports_num))
+    for shag in shags_situation:
+        isRasar = shags_situation[shag]['isRasar']
+        if  isRasar>= 0.5:
+            situation = 'רס"ר'
+            chance = isRasar*100
+        else:
+            situation = 'נקי'
+            chance = (1-isRasar)*100
+        bot.send_message(chat_id=chat_id, text = 'שג ' + shag +' '+ situation+ ' בטוח ב- ' + str(chance) +'%') 
     reply_markup = telegram.ReplyKeyboardMarkup(KEYBOARD)
     bot.send_message(chat_id=chat_id, 
                  text="בחרו מהאפשרויות לדיווח", 
@@ -107,6 +103,10 @@ def report(bot, update):
         'chat_id': chat_id,
         'time': datetime.now()
     })
+    if state=='רס"ר':
+        shags_situation[shag]['isRasar'] +=RASAR_FACTOR*(1-shags_situation[shag]['isRasar'])
+    else:
+        shags_situation[shag]['isRasar'] *=CLEAN_FACTOR
 
     custom_keyboard = [['/cancel_report']]
     reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard) 
