@@ -25,7 +25,7 @@ shags_situation = {
 # When developing, I can use the dev_token and test on RasarDevBot
 # DON'T FORGET to change back to bot_token before git commiting.
 dev_token = '1094786502:AAFkEu9_sjyj2zSz9RlUc980D4wHLQ2ij9g'
-BOT_TOKEN = dev_token #'1085565057:AAH08Gb5L8yB9rIVdLsbrQKx3yTNM_2PJGA' 
+BOT_TOKEN = '1085565057:AAH08Gb5L8yB9rIVdLsbrQKx3yTNM_2PJGA' 
 ADMIN_ID = 698233004
 KEYBOARD = [['/report גדול נקי', '/report קטן נקי'], 
             ['/report גדול רס"ר', '/report קטן רס"ר'],
