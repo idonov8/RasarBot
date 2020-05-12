@@ -1,9 +1,11 @@
+import os
 import telegram
 from telegram.ext import  Updater, InlineQueryHandler, CommandHandler, Defaults, Job, MessageHandler, Filters
 import requests # to make requests to external api
 import re # regex for pictures of doggos
 import logging
 from datetime import datetime # use to restart everyday 
+import sys
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
@@ -22,11 +24,29 @@ shags_situation = {
         }
     }
 
+# Getting mode, so we could define run function for local and Heroku setup
+mode = os.getenv("MODE")
+BOT_TOKEN = os.getenv("TOKEN")
+if mode == "dev":
+    def run(updater):
+        updater.start_polling()
+elif mode == "prod":
+    def run(updater):
+        PORT = int(os.environ.get("PORT", "8443"))
+        HEROKU_APP_NAME = os.environ.get("HEROKU_APP_NAME")
+        # Code from https://github.com/python-telegram-bot/python-telegram-bot/wiki/Webhooks#heroku
+        updater.start_webhook(listen="0.0.0.0",
+                              port=PORT,
+                              url_path=BOT_TOKEN)
+        updater.bot.set_webhook("https://{}.herokuapp.com/{}".format(HEROKU_APP_NAME, BOT_TOKEN))
+else:
+    logger.error("No MODE specified!")
+    sys.exit(1)
+
 # When developing, I can use the dev_token and test on RasarDevBot
 # DON'T FORGET to change back to bot_token before git commiting.
-dev_token = '1094786502:AAFkEu9_sjyj2zSz9RlUc980D4wHLQ2ij9g'
-BOT_TOKEN = '1085565057:AAH08Gb5L8yB9rIVdLsbrQKx3yTNM_2PJGA' 
-ADMIN_ID = 698233004
+
+ADMIN_ID = os.getenv("ADMIN_ID")
 KEYBOARD = [['/report גדול נקי', '/report קטן נקי'], 
             ['/report גדול רס"ר', '/report קטן רס"ר'],
             ['מה המצב?']]
@@ -53,16 +73,7 @@ def get_image_url():
 def bop(bot, update):
     chat_id = update.message.chat_id
     url = get_image_url()
-    bot.send_photo(chat_id=chat_id, photo=url)  
-
-def currentState(): #TODO: modify when updating db
-    global reports
-    # {
-    #     'shag': ״גדול״,
-    #     'state': ״נקי״,
-    #     'chat_id': 3423454,
-    #     'time': datetime.now()
-    # }
+    bot.send_photo(chat_id=chat_id, photo=url)
 
 def update(bot, update):
     global reports
@@ -131,7 +142,7 @@ def main():
     dp.add_handler(CommandHandler('suggest_feature', send_admin))
     dp.add_handler(CommandHandler('report',report))
     dp.add_handler(MessageHandler(Filters.text, update))
-    updater.start_polling()
+    run(updater)
     updater.idle()
 
 if __name__ == '__main__':
