@@ -26,12 +26,11 @@ shags_situation = {
 
 # Getting mode, so we could define run function for local and Heroku setup
 mode = os.getenv("MODE")
+BOT_TOKEN = os.getenv("TOKEN")
 if mode == "dev":
-    BOT_TOKEN = os.getenv("DEV_TOKEN")
     def run(updater):
         updater.start_polling()
 elif mode == "prod":
-    BOT_TOKEN = os.getenv("BOT_TOKEN")
     def run(updater):
         PORT = int(os.environ.get("PORT", "8443"))
         HEROKU_APP_NAME = os.environ.get("HEROKU_APP_NAME")
@@ -47,7 +46,7 @@ else:
 # When developing, I can use the dev_token and test on RasarDevBot
 # DON'T FORGET to change back to bot_token before git commiting.
 
-ADMIN_ID = os.getenv("ADMIN")
+ADMIN_ID = os.getenv("ADMIN_ID")
 KEYBOARD = [['/report גדול נקי', '/report קטן נקי'], 
             ['/report גדול רס"ר', '/report קטן רס"ר'],
             ['מה המצב?']]
@@ -74,7 +73,7 @@ def get_image_url():
 def bop(bot, update):
     chat_id = update.message.chat_id
     url = get_image_url()
-    bot.send_photo(chat_id=chat_id, photo=url)  
+    bot.send_photo(chat_id=chat_id, photo=url)
 
 def update(bot, update):
     global reports
