@@ -34,7 +34,6 @@ elif mode == "prod":
     def run(updater):
         PORT = int(os.environ.get("PORT", "8443"))
         HEROKU_APP_NAME = os.environ.get("HEROKU_APP_NAME")
-        # Code from https://github.com/python-telegram-bot/python-telegram-bot/wiki/Webhooks#heroku
         updater.start_webhook(listen="0.0.0.0",
                               port=PORT,
                               url_path=BOT_TOKEN)
@@ -54,6 +53,11 @@ KEYBOARD = [['/report גדול נקי', '/report קטן נקי'],
 # the rate of change towards rasar/clean
 CLEAN_FACTOR =  0.75 
 RASAR_FACTOR = 0.5
+
+# For easy monitoring during beta stage
+def log_admin(bot, info):
+    logger.info(info)
+    bot.send_message(chat_id=ADMIN_ID, text="LOG: %s"%info) 
 
 # Get random dog image for the memes
 def get_url():
@@ -75,6 +79,7 @@ def bop(bot, update):
     url = get_image_url()
     bot.send_photo(chat_id=chat_id, photo=url)
 
+# Get update of the rasar situation
 def update(bot, update):
     global reports
     chat_id = update.message.chat_id
@@ -101,13 +106,15 @@ def cancel_report(bot, update):
     bot.send_message(chat_id=chat_id, 
                  text="בחרו מהאפשרויות לדיווח", 
                  reply_markup=reply_markup)
+    user_name = str(update.effective_user.full_name)
+    log_admin(bot, "Cancel report by user: %s" % user_name)
+    
     
 def report(bot, update):
     global reports
     chat_id = update.message.chat_id
     shag = update.message.text.split()[1]
     state = update.message.text.split()[2]
-
     reports.append({
         'shag': shag,
         'state': state,
@@ -122,7 +129,8 @@ def report(bot, update):
     custom_keyboard = [['/cancel_report']]
     reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard) 
     bot.send_message(chat_id=chat_id, text='תודה שדיווחת!', reply_markup=reply_markup)
-    
+    user_name = str(update.effective_user.full_name)
+    log_admin(bot, "Recived report: %s %s by user: %s" % (shag, state, user_name))
 
 def send_admin(bot, update):
     chat_id = update.message.chat_id
