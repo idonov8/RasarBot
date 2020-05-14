@@ -54,6 +54,11 @@ KEYBOARD = [['/report גדול נקי', '/report קטן נקי'],
 CLEAN_FACTOR =  0.75 
 RASAR_FACTOR = 0.5
 
+def reset_shags():
+    global shags_situation
+    shags_situation['גדול']['isRasar'] = 0
+    shags_situation['קטן']['isRasar'] = 0
+    
 # For easy monitoring during beta stage
 def log_admin(bot, info):
     logger.info(info)
@@ -98,18 +103,34 @@ def update(bot, update):
                  reply_markup=reply_markup)
 
 def cancel_report(bot, update):
-    # Doesn't really cancel the report yet.
-    # For now it's ment to prevent spamming
+    global reports
     chat_id = update.message.chat_id
-    bot.send_message(chat_id=chat_id, text='דיווח בוטל')
+    report = next((report for report in reports if report["chat_id"] == chat_id), None)
+    if report:
+        reports.remove(report) 
+        calculate_prob() 
+        bot.send_message(chat_id=chat_id, text='דיווח בוטל')
+        user_name = str(update.effective_user.full_name)
+        log_admin(bot, "Cancel report by user: %s" % user_name)
+    else:
+        bot.send_message(chat_id=chat_id, text='הדיווח כבר בוטל או שלא נשלח מעולם')
     reply_markup = telegram.ReplyKeyboardMarkup(KEYBOARD)
     bot.send_message(chat_id=chat_id, 
                  text="בחרו מהאפשרויות לדיווח", 
                  reply_markup=reply_markup)
-    user_name = str(update.effective_user.full_name)
-    log_admin(bot, "Cancel report by user: %s" % user_name)
     
-    
+def calculate_prob():
+    global reports, shags_situation
+    reset_shags()
+    for report in reports:
+        shag  = report['shag']
+        state = report['state']
+        if state=='רס"ר':
+            shags_situation[shag]['isRasar'] +=RASAR_FACTOR*(1-shags_situation[shag]['isRasar'])
+        else:
+            shags_situation[shag]['isRasar'] *=CLEAN_FACTOR
+
+
 def report(bot, update):
     global reports
     chat_id = update.message.chat_id
@@ -121,11 +142,7 @@ def report(bot, update):
         'chat_id': chat_id,
         'time': datetime.now()
     })
-    if state=='רס"ר':
-        shags_situation[shag]['isRasar'] +=RASAR_FACTOR*(1-shags_situation[shag]['isRasar'])
-    else:
-        shags_situation[shag]['isRasar'] *=CLEAN_FACTOR
-
+    calculate_prob()
     custom_keyboard = [['/cancel_report']]
     reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard) 
     bot.send_message(chat_id=chat_id, text='תודה שדיווחת!', reply_markup=reply_markup)
