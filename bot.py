@@ -9,12 +9,10 @@ import sys
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
-
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 reports = []
-
 shags_situation = {
         'גדול': {
             'isRasar':0 # is rasar is a number between 0 and 1, 1- rasar, 0 clean
@@ -24,13 +22,23 @@ shags_situation = {
         }
     }
 
+ADMIN_ID = os.getenv("ADMIN_ID")
+KEYBOARD = [['/report גדול נקי', '/report קטן נקי'], 
+            ['/report גדול רס"ר', '/report קטן רס"ר'],
+            ['מה המצב?']]
+
+# the rate of change towards rasar/clean
+CLEAN_FACTOR =  0.75 
+RASAR_FACTOR = 0.5
+
 # Getting mode, so we could define run function for local and Heroku setup
-mode = os.getenv("MODE")
+MODE = os.getenv("MODE")
 BOT_TOKEN = os.getenv("TOKEN")
-if mode == "dev":
+
+if MODE == "dev":
     def run(updater):
         updater.start_polling()
-elif mode == "prod":
+elif MODE == "prod":
     def run(updater):
         PORT = int(os.environ.get("PORT", "8443"))
         HEROKU_APP_NAME = os.environ.get("HEROKU_APP_NAME")
@@ -42,18 +50,11 @@ else:
     logger.error("No MODE specified!")
     sys.exit(1)
 
-# When developing, I can use the dev_token and test on RasarDevBot
-# DON'T FORGET to change back to bot_token before git commiting.
-
-ADMIN_ID = os.getenv("ADMIN_ID")
-KEYBOARD = [['/report גדול נקי', '/report קטן נקי'], 
-            ['/report גדול רס"ר', '/report קטן רס"ר'],
-            ['מה המצב?']]
-
-# the rate of change towards rasar/clean
-CLEAN_FACTOR =  0.75 
-RASAR_FACTOR = 0.5
-
+def reset_shags():
+    global shags_situation
+    shags_situation['גדול']['isRasar'] = 0
+    shags_situation['קטן']['isRasar'] = 0
+    
 # For easy monitoring during beta stage
 def log_admin(bot, info):
     logger.info(info)
@@ -98,18 +99,33 @@ def update(bot, update):
                  reply_markup=reply_markup)
 
 def cancel_report(bot, update):
-    # Doesn't really cancel the report yet.
-    # For now it's ment to prevent spamming
+    global reports
     chat_id = update.message.chat_id
-    bot.send_message(chat_id=chat_id, text='דיווח בוטל')
+    report = next((report for report in reports if report["chat_id"] == chat_id), None)
+    if report:
+        reports.remove(report) 
+        calculate_prob() 
+        bot.send_message(chat_id=chat_id, text='דיווח בוטל')
+        user_name = str(update.effective_user.full_name)
+        log_admin(bot, "Cancel report by user: %s" % user_name)
+    else:
+        bot.send_message(chat_id=chat_id, text='הדיווח כבר בוטל או שלא נשלח מעולם')
     reply_markup = telegram.ReplyKeyboardMarkup(KEYBOARD)
     bot.send_message(chat_id=chat_id, 
                  text="בחרו מהאפשרויות לדיווח", 
                  reply_markup=reply_markup)
-    user_name = str(update.effective_user.full_name)
-    log_admin(bot, "Cancel report by user: %s" % user_name)
     
-    
+def calculate_prob():
+    global reports, shags_situation
+    reset_shags()
+    for report in reports:
+        shag  = report['shag']
+        state = report['state']
+        if state=='רס"ר':
+            shags_situation[shag]['isRasar'] +=RASAR_FACTOR*(1-shags_situation[shag]['isRasar'])
+        else:
+            shags_situation[shag]['isRasar'] *=CLEAN_FACTOR
+
 def report(bot, update):
     global reports
     chat_id = update.message.chat_id
@@ -121,18 +137,14 @@ def report(bot, update):
         'chat_id': chat_id,
         'time': datetime.now()
     })
-    if state=='רס"ר':
-        shags_situation[shag]['isRasar'] +=RASAR_FACTOR*(1-shags_situation[shag]['isRasar'])
-    else:
-        shags_situation[shag]['isRasar'] *=CLEAN_FACTOR
-
+    calculate_prob()
     custom_keyboard = [['/cancel_report']]
     reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard) 
     bot.send_message(chat_id=chat_id, text='תודה שדיווחת!', reply_markup=reply_markup)
     user_name = str(update.effective_user.full_name)
     log_admin(bot, "Recived report: %s %s by user: %s" % (shag, state, user_name))
 
-def send_admin(bot, update):
+def send_to_admin(bot, update):
     chat_id = update.message.chat_id
     message = update.message.text
     if len(message.split()) == 1:
@@ -146,8 +158,8 @@ def main():
     dp = updater.dispatcher
     dp.add_handler(CommandHandler('cancel_report',cancel_report))
     dp.add_handler(CommandHandler('bop',bop))
-    dp.add_handler(CommandHandler('report_bug', send_admin))
-    dp.add_handler(CommandHandler('suggest_feature', send_admin))
+    dp.add_handler(CommandHandler('report_bug', send_to_admin))
+    dp.add_handler(CommandHandler('suggest_feature', send_to_admin))
     dp.add_handler(CommandHandler('report',report))
     dp.add_handler(MessageHandler(Filters.text, update))
     run(updater)
