@@ -131,6 +131,9 @@ def report(bot, update):
     chat_id = update.message.chat_id
     shag = update.message.text.split()[1]
     state = update.message.text.split()[2]
+    old_report = next((report for report in reports if report["chat_id"] == chat_id), None)
+    if old_report:
+        reports.remove(old_report) 
     reports.append({
         'shag': shag,
         'state': state,
@@ -138,7 +141,7 @@ def report(bot, update):
         'time': datetime.now()
     })
     calculate_prob()
-    custom_keyboard = [['/cancel_report']]
+    custom_keyboard = [['/cancel_report', '/new_report']]
     reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard) 
     bot.send_message(chat_id=chat_id, text='תודה שדיווחת!', reply_markup=reply_markup)
     user_name = str(update.effective_user.full_name)
@@ -153,6 +156,11 @@ def send_to_admin(bot, update):
         bot.send_message(chat_id=chat_id, text='תודה רבה :)')
         bot.send_message(chat_id=ADMIN_ID, text=message)
 
+def new_report(bot, update):
+    bot.send_message(chat_id=update.message.chat_id, 
+                 text="בחרו מהאפשרויות לדיווח", 
+                 reply_markup=telegram.ReplyKeyboardMarkup(KEYBOARD))
+
 def main():
     updater = Updater(BOT_TOKEN)
     dp = updater.dispatcher
@@ -161,7 +169,8 @@ def main():
     dp.add_handler(CommandHandler('report_bug', send_to_admin))
     dp.add_handler(CommandHandler('suggest_feature', send_to_admin))
     dp.add_handler(CommandHandler('report',report))
-    dp.add_handler(MessageHandler(Filters.text, update))
+    dp.add_handler(CommandHandler('new_report',new_report))
+    dp.add_handler(MessageHandler(Filters.text("מה המצב?"), update))
     run(updater)
     updater.idle()
 
