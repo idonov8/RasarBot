@@ -93,10 +93,6 @@ def update(bot, update):
             situation = 'נקי'
             chance = (1-isRasar)*100
         bot.send_message(chat_id=chat_id, text = 'שג ' + shag +' '+ situation+ ' בטוח ב- ' + str(chance) +'%') 
-    reply_markup = telegram.ReplyKeyboardMarkup(KEYBOARD)
-    bot.send_message(chat_id=chat_id, 
-                 text="בחרו מהאפשרויות לדיווח", 
-                 reply_markup=reply_markup)
 
 def cancel_report(bot, update):
     global reports
@@ -141,7 +137,8 @@ def report(bot, update):
         'time': datetime.now()
     })
     calculate_prob()
-    custom_keyboard = [['/cancel_report', '/new_report']]
+    custom_keyboard = [['/cancel_report', '/new_report'],
+                        ['מה המצב?']]
     reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard) 
     bot.send_message(chat_id=chat_id, text='תודה שדיווחת!', reply_markup=reply_markup)
     user_name = str(update.effective_user.full_name)
