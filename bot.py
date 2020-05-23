@@ -1,4 +1,3 @@
-import os
 import telegram
 from telegram.ext import  Updater, InlineQueryHandler, CommandHandler, Defaults, Job, MessageHandler, Filters
 import requests # to make requests to external api
@@ -6,11 +5,7 @@ import re # regex for pictures of doggos
 import logging
 from datetime import datetime # use to restart everyday 
 import sys
-
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    level=logging.INFO)
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+from consts import *
 
 reports = []
 shags_situation = {
@@ -21,19 +16,11 @@ shags_situation = {
             'isRasar':0
         }
     }
-
-ADMIN_ID = os.getenv("ADMIN_ID")
-KEYBOARD = [['/report גדול נקי', '/report קטן נקי'], 
-            ['/report גדול רס"ר', '/report קטן רס"ר'],
-            ['מה המצב?']]
-
-# the rate of change towards rasar/clean
-CLEAN_FACTOR =  0.75 
-RASAR_FACTOR = 0.5
-
-# Getting mode, so we could define run function for local and Heroku setup
-MODE = os.getenv("MODE")
-BOT_TOKEN = os.getenv("TOKEN")
+    
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    level=logging.INFO)
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 if MODE == "dev":
     def run(updater):
