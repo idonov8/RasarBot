@@ -36,11 +36,6 @@ elif MODE == "prod":
 else:
     logger.error("No MODE specified!")
     sys.exit(1)
-
-def reset_shags():
-    global shags_situation
-    shags_situation['גדול']['isRasar'] = 0
-    shags_situation['קטן']['isRasar'] = 0
     
 # For easy monitoring during beta stage
 def log_admin(bot, info):
@@ -67,6 +62,15 @@ def bop(bot, update):
     url = get_image_url()
     bot.send_photo(chat_id=chat_id, photo=url)
 
+def reset_shags():
+    global shags_situation
+    shags_situation['גדול']['isRasar'] = 0
+    shags_situation['קטן']['isRasar'] = 0
+
+def count_shag(shag):
+    global reports
+    return len(list(filter(lambda report: report['shag']==shag, reports)))
+
 # Get update of the rasar situation
 def update(bot, update):
     global reports
@@ -79,7 +83,12 @@ def update(bot, update):
         else:
             situation = 'נקי'
             chance = (1-isRasar)*100
-        bot.send_message(chat_id=chat_id, text = 'שג ' + shag +' '+ situation+ ' בטוח ב- ' + str(chance) +'%') 
+        if count_shag(shag) >= MIN_REPORTS:
+            bot.send_message(chat_id=chat_id, text = 'שג ' + shag +' '+ situation+ ' בטוח ב- ' 
+            + str(chance) +'%\n' 
+            + "התקבלו " + str(count_shag(shag)) + " דיווחים")
+        else:
+            bot.send_message(chat_id=chat_id, text = "לא התקבלו מספיק דיווחים בשג " + shag)
 
 def cancel_report(bot, update):
     global reports

@@ -1,5 +1,8 @@
 import os
 
+# Minimum reports number for calculating propability
+MIN_REPORTS = 1
+
 KEYBOARD = [['/report גדול נקי', '/report קטן נקי'], 
             ['/report גדול רס"ר', '/report קטן רס"ר'],
             ['מה המצב?']]
