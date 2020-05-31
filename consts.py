@@ -1,4 +1,6 @@
 import os
+from dotenv import load_dotenv
+load_dotenv()
 
 # Minimum reports number for calculating propability
 MIN_REPORTS = 1
