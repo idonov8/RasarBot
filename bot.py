@@ -160,8 +160,7 @@ def main():
     dp = updater.dispatcher
     dp.add_handler(CommandHandler('cancel_report',cancel_report))
     dp.add_handler(CommandHandler('bop',bop))
-    dp.add_handler(CommandHandler('report_bug', send_to_admin))
-    dp.add_handler(CommandHandler('suggest_feature', send_to_admin))
+    dp.add_handler(CommandHandler('send_feedback', send_to_admin))
     dp.add_handler(CommandHandler('report',report))
     dp.add_handler(CommandHandler('new_report',new_report))
     dp.add_handler(MessageHandler(Filters.text("מה המצב?"), update))
