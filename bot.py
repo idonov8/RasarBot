@@ -36,11 +36,6 @@ elif MODE == "prod":
 else:
     logger.error("No MODE specified!")
     sys.exit(1)
-    
-# For easy monitoring during beta stage
-def log_admin(bot, info):
-    logger.info(info)
-    bot.send_message(chat_id=ADMIN_ID, text="LOG: %s"%info) 
 
 # Get random dog image for the memes
 def get_url():
@@ -62,6 +57,7 @@ def bop(bot, update):
     url = get_image_url()
     bot.send_photo(chat_id=chat_id, photo=url)
 
+# Helper functions
 def reset_shags():
     global shags_situation
     shags_situation['גדול']['isRasar'] = 0
@@ -70,6 +66,13 @@ def reset_shags():
 def count_reports_in_shag(shag):
     global reports
     return len(list(filter(lambda report: report['shag']==shag, reports)))
+
+def message_admin(bot, update, text):
+    bot.send_message(chat_id=ADMIN_ID, text=text + '\n מאת ' + update.effective_user.full_name)
+
+def log_admin(bot, info):
+    logger.info(info)
+    bot.send_message(chat_id=ADMIN_ID, text="LOG: %s"%info) 
 
 # Get update of the rasar situation
 def update(bot, update):
@@ -141,14 +144,26 @@ def report(bot, update):
     user_name = str(update.effective_user.full_name)
     log_admin(bot, "Recived report: %s %s by user: %s" % (shag, state, user_name))
 
-def send_to_admin(bot, update):
+def send_feedback(bot, update):
+    global feedback_message
     chat_id = update.message.chat_id
     message = update.message.text
     if len(message.split()) == 1:
-        bot.send_message(chat_id=chat_id, text='יש לכתוב את הפקודה ' + message + ' ולאחר מכן טקסט חופשי.  \n \n טיפ: נגיעה ארוכה על הפקודה תכתוב אותה מבלי לשלוח.') 
+        feedback_message = bot.send_message(chat_id=chat_id, text='דברו אני מקשיב')
     else:
         bot.send_message(chat_id=chat_id, text='תודה רבה :)')
-        bot.send_message(chat_id=ADMIN_ID, text=message)
+        message_admin(bot, update, message.split(' ', 1)[1])
+
+def message_handler(bot, update):
+    global feedback_message
+    chat_id = update.message.chat_id
+    message = update.message.text
+    if 'feedback_message' in globals():
+        if feedback_message.message_id + 1 == update.message.message_id:
+            bot.send_message(chat_id=chat_id, text='תודה רבה :)')
+            message_admin(bot, update, message)
+    else:
+        bot.send_message(chat_id=chat_id, text='אם אתם רוצים לספר לי משהו השתמשו בפקודה /send_feedback')
 
 def new_report(bot, update):
     bot.send_message(chat_id=update.message.chat_id, 
@@ -160,10 +175,11 @@ def main():
     dp = updater.dispatcher
     dp.add_handler(CommandHandler('cancel_report',cancel_report))
     dp.add_handler(CommandHandler('bop',bop))
-    dp.add_handler(CommandHandler('send_feedback', send_to_admin))
+    dp.add_handler(CommandHandler('send_feedback', send_feedback))
     dp.add_handler(CommandHandler('report',report))
     dp.add_handler(CommandHandler('new_report',new_report))
     dp.add_handler(MessageHandler(Filters.text("מה המצב?"), update))
+    dp.add_handler(MessageHandler(Filters.all, message_handler))
     run(updater)
     updater.idle()
 
