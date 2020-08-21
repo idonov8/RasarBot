@@ -68,7 +68,9 @@ def count_reports_in_shag(shag):
     return len(list(filter(lambda report: report['shag']==shag, reports)))
 
 def message_admin(bot, update, text):
-    bot.send_message(chat_id=ADMIN_ID, text=text + '\n מאת ' + update.effective_user.full_name)
+    bot.forward_message(chat_id=ADMIN_ID, 
+                        from_chat_id=update.message.chat_id, 
+                        message_id=update.message.message_id)
 
 def log_admin(bot, info):
     logger.info(info)
@@ -158,10 +160,12 @@ def message_handler(bot, update):
     global feedback_message
     chat_id = update.message.chat_id
     message = update.message.text
-    if 'feedback_message' in globals():
-        if feedback_message.message_id + 1 == update.message.message_id:
+    if 'feedback_message' in globals() and feedback_message.message_id + 1 == update.message.message_id:
             bot.send_message(chat_id=chat_id, text='תודה רבה :)')
             message_admin(bot, update, message)
+    elif chat_id == int(ADMIN_ID) and update.message.reply_to_message:
+        user_id = update.message.reply_to_message.forward_from.id
+        bot.send_message(chat_id=user_id, text=message)
     else:
         bot.send_message(chat_id=chat_id, text='אם אתם רוצים לספר לי משהו השתמשו בפקודה /send_feedback')
 
