@@ -1,5 +1,5 @@
-requests==2.22.0
+pytz==2020.4
 telegram==0.0.1
 python-telegram-bot==12.7
-python-dotenv==0.13.0
-pytz==2020.4
+python-dotenv==0.15.0
+requests==2.22.0
