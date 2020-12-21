@@ -3,7 +3,8 @@ from telegram.ext import  Updater, InlineQueryHandler, CommandHandler, Defaults,
 import requests # to make requests to external api
 import re # regex for pictures of doggos
 import logging
-from datetime import datetime # use to restart everyday 
+from datetime import datetime # use to show time of last report
+import pytz # handles timezone difference with remote server
 import sys
 from consts import *
 
@@ -102,7 +103,8 @@ def update(bot, update):
             + "התקבלו " + str(reports_count) + " דיווחים\n" +
             "דיווח אחרון (" +
              last_report['state'] + 
-             ") התקבל ב: " +  last_report['time'].strftime("%H:%M:%S") )
+             ") התקבל ב: " + 
+             last_report['time'].strftime("%H:%M:%S") )
         else:
             bot.send_message(chat_id=chat_id, text = "לא התקבלו דיווחים בשג " + shag)
 
@@ -146,7 +148,7 @@ def report(bot, update):
         'shag': shag,
         'state': state,
         'chat_id': chat_id,
-        'time': datetime.now()
+        'time': pytz.utc.localize(datetime.utcnow()).astimezone(pytz.timezone("Israel"))
     })
     calculate_prob()
     custom_keyboard = [['/cancel_report', '/new_report'],
