@@ -6,16 +6,7 @@ import logging
 from datetime import datetime # use to restart everyday 
 import sys
 from consts import *
-
-reports = []
-shags_situation = {
-        'גדול': {
-            'isRasar':0 # is rasar is a number between 0 and 1, 1- rasar, 0 clean
-        },
-        'קטן':{
-            'isRasar':0
-        }
-    }
+from shagService import reports, shags_situation, reset_shags, count_reports_in_shag
     
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
@@ -58,15 +49,6 @@ def bop(bot, update):
     bot.send_photo(chat_id=chat_id, photo=url)
 
 # Helper functions
-def reset_shags():
-    global shags_situation
-    shags_situation['גדול']['isRasar'] = 0
-    shags_situation['קטן']['isRasar'] = 0
-
-def count_reports_in_shag(shag):
-    global reports
-    return len(list(filter(lambda report: report['shag']==shag, reports)))
-
 def message_admin(bot, update, text):
     bot.forward_message(chat_id=ADMIN_ID, 
                         from_chat_id=update.message.chat_id, 
