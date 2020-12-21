@@ -67,6 +67,12 @@ def count_reports_in_shag(shag):
     global reports
     return len(list(filter(lambda report: report['shag']==shag, reports)))
 
+def get_last_report(shag):
+    global reports
+    for report in reversed(reports): 
+        if report['shag']==shag:
+            return report 
+
 def message_admin(bot, update, text):
     bot.forward_message(chat_id=ADMIN_ID, 
                         from_chat_id=update.message.chat_id, 
@@ -90,9 +96,13 @@ def update(bot, update):
             chance = (1-isRasar)*100
         reports_count = count_reports_in_shag(shag)
         if reports_count >= MIN_REPORTS:
-            bot.send_message(chat_id=chat_id, text = 'שג ' + shag +' '+ situation+ ' בטוח ב- ' 
-            + str(chance) +'%\n' 
-            + "התקבלו " + str(reports_count) + " דיווחים")
+            last_report = get_last_report(shag)
+            bot.send_message(chat_id=chat_id, text = 'שג ' + shag +' '+ situation
+            + ' בטוח ב- ' + str(chance) +'%\n' 
+            + "התקבלו " + str(reports_count) + " דיווחים\n" +
+            "דיווח אחרון (" +
+             last_report['state'] + 
+             ") התקבל ב: " +  last_report['time'].strftime("%H:%M:%S") )
         else:
             bot.send_message(chat_id=chat_id, text = "לא התקבלו דיווחים בשג " + shag)
 
