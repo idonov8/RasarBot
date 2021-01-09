@@ -11,10 +11,10 @@ from consts import *
 reports = []
 shags_situation = {
         'גדול': {
-            'isRasar':0 # is rasar is a number between 0 and 1, 1- rasar, 0 clean
+            'isDirty':0 # is dirty is a number between 0 and 1, 1- dirty, 0 clean
         },
         'קטן':{
-            'isRasar':0
+            'isDirty':0
         }
     }
     
@@ -61,8 +61,8 @@ def bop(bot, update):
 # Helper functions
 def reset_shags():
     global shags_situation
-    shags_situation['גדול']['isRasar'] = 0
-    shags_situation['קטן']['isRasar'] = 0
+    shags_situation['גדול']['isDirty'] = 0
+    shags_situation['קטן']['isDirty'] = 0
 
 def count_reports_in_shag(shag):
     global reports
@@ -88,13 +88,13 @@ def update(bot, update):
     global reports
     chat_id = update.message.chat_id
     for shag in shags_situation:
-        isRasar = shags_situation[shag]['isRasar']
-        if  isRasar>= 0.5:
-            situation = 'רס"ר'
-            chance = isRasar*100
+        isDirty = shags_situation[shag]['isDirty']
+        if  isDirty>= 0.5:
+            situation = 'מלוכלך'
+            chance = isDirty*100
         else:
             situation = 'נקי'
-            chance = (1-isRasar)*100
+            chance = (1-isDirty)*100
         reports_count = count_reports_in_shag(shag)
         if reports_count >= MIN_REPORTS:
             last_report = get_last_report(shag)
@@ -131,10 +131,10 @@ def calculate_prob():
     for report in reports:
         shag  = report['shag']
         state = report['state']
-        if state=='רס"ר':
-            shags_situation[shag]['isRasar'] +=RASAR_FACTOR*(1-shags_situation[shag]['isRasar'])
+        if state=='מלוכלך':
+            shags_situation[shag]['isDirty'] +=DIRTY_FACTOR*(1-shags_situation[shag]['isDirty'])
         else:
-            shags_situation[shag]['isRasar'] *=CLEAN_FACTOR
+            shags_situation[shag]['isDirty'] *=CLEAN_FACTOR
 
 def report(bot, update):
     global reports
