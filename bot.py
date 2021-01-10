@@ -131,10 +131,10 @@ def calculate_prob():
     for report in reports:
         shag  = report['shag']
         state = report['state']
-        if state=='מלוכלך':
-            shags_situation[shag]['isDirty'] +=DIRTY_FACTOR*(1-shags_situation[shag]['isDirty'])
-        else:
+        if state=='נקי':
             shags_situation[shag]['isDirty'] *=CLEAN_FACTOR
+        else:
+            shags_situation[shag]['isDirty'] +=DIRTY_FACTOR*(1-shags_situation[shag]['isDirty'])
 
 def report(bot, update):
     global reports
