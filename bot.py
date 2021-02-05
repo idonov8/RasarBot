@@ -9,7 +9,7 @@ import sys
 from consts import *
 
 reports = []
-report_chat_id = []
+report_chat_ids = set()
 shags_situation = {
         'גדול': {
             'isDirty':0 # is dirty is a number between 0 and 1, 1- dirty, 0 clean
@@ -107,7 +107,7 @@ def update(bot, update):
         if reports_count >= MIN_REPORTS:
             last_report = get_last_report(shag)
             bot.send_message(chat_id=chat_id, text = 'שג ' + shag +' '+ situation
-            + '%\n' 
+            + '\n' 
             + "התקבלו " + str(reports_count) + " דיווחים\n" +
             "דיווח אחרון (" +
              last_report['state'] + 
@@ -160,9 +160,9 @@ def report(bot, update):
     })
     calculate_prob()
     if state == 'מלוכלך':
-        global report_chat_id
+        global report_chat_ids
         reply_markup = telegram.ReplyKeyboardMarkup(STATE_KEYBOARD)
-        report_chat_id.append(chat_id)
+        report_chat_ids.add(chat_id)
         bot.send_message(chat_id=chat_id, text=('מה סוג האיום בשג ה'+shag+'? (אם האיום לא נמצא ברשימה, כתבו במקלדת בשפה חופשית)'), reply_markup=reply_markup)
     else:
         reply_markup = telegram.ReplyKeyboardMarkup(SECOND_KEYBOARD, one_time_keyboard=True) 
@@ -182,16 +182,16 @@ def send_feedback(bot, update):
         bot.send_message(chat_id=chat_id, text='תודה רבה :)', reply_markup=auto_reply_markup(chat_id))
 
 def message_handler(bot, update):
-    global feedback_message, state_kind, report_chat_id, reports
+    global feedback_message, state_kind, report_chat_ids, reports
     chat_id = update.message.chat_id
     message = update.message.text
-    if chat_id in report_chat_id:
+    if chat_id in report_chat_ids:
         for report in reports:
             if report['chat_id'] == chat_id:
                 report['state'] = message
         reply_markup = telegram.ReplyKeyboardMarkup(SECOND_KEYBOARD, one_time_keyboard=True) 
         bot.send_message(chat_id=chat_id, text='תודה שדיווחת!', reply_markup=reply_markup)
-        report_chat_id.remove(chat_id)
+        report_chat_ids.discard(chat_id)
     elif 'feedback_message' in globals():
             bot.send_message(chat_id=chat_id, text='תודה רבה :)', reply_markup=auto_reply_markup(chat_id))
             message_admin(bot, update, message)
