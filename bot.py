@@ -107,7 +107,7 @@ def update(bot, update):
         if reports_count >= MIN_REPORTS:
             last_report = get_last_report(shag)
             bot.send_message(chat_id=chat_id, text = 'שג ' + shag +' '+ situation
-            + ' בטוח ב- ' + str(chance) +'%\n' 
+            + '%\n' 
             + "התקבלו " + str(reports_count) + " דיווחים\n" +
             "דיווח אחרון (" +
              last_report['state'] + 
