@@ -9,6 +9,7 @@ import sys
 from consts import *
 
 reports = []
+report_chat_id = []
 shags_situation = {
         'גדול': {
             'isDirty':0 # is dirty is a number between 0 and 1, 1- dirty, 0 clean
@@ -161,7 +162,7 @@ def report(bot, update):
     if state == 'מלוכלך':
         global report_chat_id
         reply_markup = telegram.ReplyKeyboardMarkup([['מ"צ'], ['רס"ר'], ['מניונית'],['איציק']])
-        report_chat_id = chat_id
+        report_chat_id.append(chat_id)
         bot.send_message(chat_id=chat_id, text=('מה סוג האיום בשג ה'+shag+'? (אם האיום לא נמצא ברשימה, כתבו במקלדת בשפה חופשית)'), reply_markup=reply_markup)
     else:
         reply_markup = telegram.ReplyKeyboardMarkup(SECOND_KEYBOARD, one_time_keyboard=True) 
@@ -184,13 +185,13 @@ def message_handler(bot, update):
     global feedback_message, state_kind, report_chat_id, reports
     chat_id = update.message.chat_id
     message = update.message.text
-    if 'report_chat_id' in globals() and report_chat_id == chat_id:
+    if chat_id in report_chat_id:
         for report in reports:
-            if report['chat_id'] == report_chat_id:
+            if report['chat_id'] == chat_id:
                 report['state'] = message
         reply_markup = telegram.ReplyKeyboardMarkup(SECOND_KEYBOARD, one_time_keyboard=True) 
         bot.send_message(chat_id=chat_id, text='תודה שדיווחת!', reply_markup=reply_markup)
-        del report_chat_id
+        report_chat_id.remove(chat_id)
     elif 'feedback_message' in globals():
             bot.send_message(chat_id=chat_id, text='תודה רבה :)', reply_markup=auto_reply_markup(chat_id))
             message_admin(bot, update, message)
