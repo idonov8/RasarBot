@@ -153,10 +153,17 @@ def report(bot, update):
     calculate_prob()
     custom_keyboard = [['/cancel_report', '/new_report'],
                         ['מה המצב?']]
-    reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard) 
-    bot.send_message(chat_id=chat_id, text='תודה שדיווחת!', reply_markup=reply_markup)
-    user_name = str(update.effective_user.full_name)
-    log_admin(bot, "Recived report: %s %s by user: %s" % (shag, state, user_name))
+
+    if state == 'מלוכלך':
+        global state_kind, report_chat_id
+        reply_markup = telegram.ReplyKeyboardMarkup([['מצ'], ['רס"ר'], ['איציק'], ['אחר']])
+        report_chat_id = chat_id
+        state_kind = bot.send_message(chat_id=chat_id, text=('מה סוג האיום בש"ג ה'+shag), reply_markup=reply_markup)
+    else:
+        reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard) 
+        bot.send_message(chat_id=chat_id, text='תודה שדיווחת!', reply_markup=reply_markup)
+        user_name = str(update.effective_user.full_name)
+        log_admin(bot, "Recived report: %s %s by user: %s" % (shag, state, user_name))
 
 def send_feedback(bot, update):
     global feedback_message
@@ -169,10 +176,21 @@ def send_feedback(bot, update):
         message_admin(bot, update, message.split(' ', 1)[1])
 
 def message_handler(bot, update):
-    global feedback_message
+    global feedback_message, state_kind, report_chat_id, reports
     chat_id = update.message.chat_id
     message = update.message.text
-    if 'feedback_message' in globals() and feedback_message.message_id + 1 == update.message.message_id:
+    if 'state_kind' in globals() and state_kind.message_id + 1 == update.message.message_id:
+        for report in reports:
+            if report['chat_id'] == report_chat_id:
+                report['state'] = message
+        custom_keyboard = [['/cancel_report', '/new_report'],
+                        ['מה המצב?']]
+        reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard) 
+        bot.send_message(chat_id=chat_id, text='תודה שדיווחת!', reply_markup=reply_markup)
+        user_name = str(update.effective_user.full_name)
+        # log_admin(bot, "Recived report: %s %s by user: %s" % (shag, state, user_name))
+
+    elif 'feedback_message' in globals() and feedback_message.message_id + 1 == update.message.message_id:
             bot.send_message(chat_id=chat_id, text='תודה רבה :)')
             message_admin(bot, update, message)
     elif chat_id == int(ADMIN_ID) and update.message.reply_to_message:
