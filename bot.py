@@ -161,7 +161,7 @@ def report(bot, update):
     calculate_prob()
     if state == 'מלוכלך':
         global report_chat_id
-        reply_markup = telegram.ReplyKeyboardMarkup([['מ"צ'], ['רס"ר'], ['מניונית'],['איציק']])
+        reply_markup = telegram.ReplyKeyboardMarkup(STATE_KEYBOARD)
         report_chat_id.append(chat_id)
         bot.send_message(chat_id=chat_id, text=('מה סוג האיום בשג ה'+shag+'? (אם האיום לא נמצא ברשימה, כתבו במקלדת בשפה חופשית)'), reply_markup=reply_markup)
     else:
