@@ -9,6 +9,7 @@ import sys
 from consts import *
 
 reports = []
+report_chat_ids = set()
 shags_situation = {
         'גדול': {
             'isDirty':0 # is dirty is a number between 0 and 1, 1- dirty, 0 clean
@@ -83,10 +84,17 @@ def log_admin(bot, info):
     logger.info(info)
     bot.send_message(chat_id=ADMIN_ID, text="LOG: %s"%info) 
 
+def auto_reply_markup(chat_id):
+    if next((report for report in reports if report["chat_id"] == chat_id), None):
+        return telegram.ReplyKeyboardMarkup(SECOND_KEYBOARD, one_time_keyboard=True)
+    else:
+        return telegram.ReplyKeyboardMarkup(BASE_KEYBOARD, one_time_keyboard=True)
+
 # Get update of the rasar situation
 def update(bot, update):
     global reports
     chat_id = update.message.chat_id
+    reply_markup = auto_reply_markup(chat_id)
     for shag in shags_situation:
         isDirty = shags_situation[shag]['isDirty']
         if  isDirty>= 0.5:
@@ -99,14 +107,14 @@ def update(bot, update):
         if reports_count >= MIN_REPORTS:
             last_report = get_last_report(shag)
             bot.send_message(chat_id=chat_id, text = 'שג ' + shag +' '+ situation
-            + ' בטוח ב- ' + str(chance) +'%\n' 
+            + '\n' 
             + "התקבלו " + str(reports_count) + " דיווחים\n" +
             "דיווח אחרון (" +
              last_report['state'] + 
              ") התקבל ב: " + 
-             last_report['time'].strftime("%H:%M:%S") )
+             last_report['time'].strftime("%H:%M:%S"), reply_markup=reply_markup)
         else:
-            bot.send_message(chat_id=chat_id, text = "לא התקבלו דיווחים בשג " + shag)
+            bot.send_message(chat_id=chat_id, text = "לא התקבלו דיווחים בשג " + shag, reply_markup=reply_markup)
 
 def cancel_report(bot, update):
     global reports
@@ -120,7 +128,7 @@ def cancel_report(bot, update):
         log_admin(bot, "Cancel report by user: %s" % user_name)
     else:
         bot.send_message(chat_id=chat_id, text='הדיווח כבר בוטל או שלא נשלח מעולם')
-    reply_markup = telegram.ReplyKeyboardMarkup(KEYBOARD)
+    reply_markup = telegram.ReplyKeyboardMarkup(BASE_KEYBOARD, one_time_keyboard=True)
     bot.send_message(chat_id=chat_id, 
                  text="בחרו מהאפשרויות לדיווח", 
                  reply_markup=reply_markup)
@@ -151,10 +159,15 @@ def report(bot, update):
         'time': pytz.utc.localize(datetime.utcnow()).astimezone(pytz.timezone("Israel"))
     })
     calculate_prob()
-    custom_keyboard = [['/cancel_report', '/new_report'],
-                        ['מה המצב?']]
-    reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard) 
-    bot.send_message(chat_id=chat_id, text='תודה שדיווחת!', reply_markup=reply_markup)
+    if state == 'מלוכלך':
+        global report_chat_ids
+        reply_markup = telegram.ReplyKeyboardMarkup(STATE_KEYBOARD)
+        report_chat_ids.add(chat_id)
+        bot.send_message(chat_id=chat_id, text=('מה סוג האיום בשג ה'+shag+'? (אם האיום לא נמצא ברשימה, כתבו במקלדת בשפה חופשית)'), reply_markup=reply_markup)
+    else:
+        reply_markup = telegram.ReplyKeyboardMarkup(SECOND_KEYBOARD, one_time_keyboard=True) 
+        bot.send_message(chat_id=chat_id, text='תודה שדיווחת!', reply_markup=reply_markup)
+    
     user_name = str(update.effective_user.full_name)
     log_admin(bot, "Recived report: %s %s by user: %s" % (shag, state, user_name))
 
@@ -165,26 +178,34 @@ def send_feedback(bot, update):
     if len(message.split()) == 1:
         feedback_message = bot.send_message(chat_id=chat_id, text='דברו אני מקשיב')
     else:
-        bot.send_message(chat_id=chat_id, text='תודה רבה :)')
         message_admin(bot, update, message.split(' ', 1)[1])
+        bot.send_message(chat_id=chat_id, text='תודה רבה :)', reply_markup=auto_reply_markup(chat_id))
 
 def message_handler(bot, update):
-    global feedback_message
+    global feedback_message, state_kind, report_chat_ids, reports
     chat_id = update.message.chat_id
     message = update.message.text
-    if 'feedback_message' in globals() and feedback_message.message_id + 1 == update.message.message_id:
-            bot.send_message(chat_id=chat_id, text='תודה רבה :)')
+    if chat_id in report_chat_ids:
+        for report in reports:
+            if report['chat_id'] == chat_id:
+                report['state'] = message
+        reply_markup = telegram.ReplyKeyboardMarkup(SECOND_KEYBOARD, one_time_keyboard=True) 
+        bot.send_message(chat_id=chat_id, text='תודה שדיווחת!', reply_markup=reply_markup)
+        report_chat_ids.discard(chat_id)
+    elif 'feedback_message' in globals():
+            bot.send_message(chat_id=chat_id, text='תודה רבה :)', reply_markup=auto_reply_markup(chat_id))
             message_admin(bot, update, message)
+            del feedback_message
     elif chat_id == int(ADMIN_ID) and update.message.reply_to_message:
         user_id = update.message.reply_to_message.forward_from.id
         bot.send_message(chat_id=user_id, text=message)
     else:
-        bot.send_message(chat_id=chat_id, text='אם אתם רוצים לספר לי משהו השתמשו בפקודה /send_feedback')
+        bot.send_message(chat_id=chat_id, text='אם אתם רוצים לספר לי משהו השתמשו בפקודה /send_feedback או שלחו דיווח חדש עם /new_report')
 
 def new_report(bot, update):
     bot.send_message(chat_id=update.message.chat_id, 
                  text="בחרו מהאפשרויות לדיווח", 
-                 reply_markup=telegram.ReplyKeyboardMarkup(KEYBOARD))
+                 reply_markup=telegram.ReplyKeyboardMarkup(BASE_KEYBOARD, one_time_keyboard=True))
 
 def main():
     updater = Updater(BOT_TOKEN)
