@@ -111,7 +111,7 @@ def update(bot, update):
 def cancel_report(bot, update):
     global reports
     chat_id = update.message.chat_id
-    report = next((report for report in reports if report["chat_id"] == chat_id), None)
+    report = next((report for report in reversed(reports) if report["chat_id"] == chat_id), None)
     if report:
         reports.remove(report) 
         calculate_prob() 
@@ -141,7 +141,7 @@ def report(bot, update):
     chat_id = update.message.chat_id
     shag = update.message.text.split()[1]
     state = update.message.text.split()[2]
-    old_report = next((report for report in reports if report["chat_id"] == chat_id), None)
+    old_report = next((report for report in reports if report["chat_id"] == chat_id and report["shag"] == shag), None)
     if old_report:
         reports.remove(old_report) 
     reports.append({
